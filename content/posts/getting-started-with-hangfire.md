@@ -1,7 +1,6 @@
 ---
 title: "Getting Started With Hangfire"
 date: 2021-05-02T22:00:44-04:00
-draft: true
 ---
 
 Putting together this guide for testing out hangfire to fill in some of the gaps I found through creating a greenfield hangfire application.
