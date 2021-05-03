@@ -22,7 +22,7 @@ In addition to this, I'm going to break down each segment that I tested in these
 ### the 'new' operator
 The new operator is the normal way of creating new objects in C#.
 
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class NewBuilder
 {
     public static TestObject Build()
@@ -38,7 +38,7 @@ This is included because it will serve as our baseline to show us how much perfo
 This is the simplest and most common way of generating objects at runtime. It's simple to write and is generally performant enough for most things, **but we can do better.**
 
 **Create Instance without a Template**
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class ActivatorCreateBuilderWithoutGeneric
 {
     public static TestObject Build()
@@ -49,7 +49,7 @@ public static class ActivatorCreateBuilderWithoutGeneric
 {{< / highlight >}}
 
 **Create Instance with a Template**
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class ActivatorCreateBuilderWithGeneric
 {
     public static TestObject Build()
@@ -66,7 +66,7 @@ I'm including both the templated and the non-templated version in this test beca
 These methods rely on combination of the System.Reflection and System.Runtime.Serialization namespaces. I believe these methods rely primarily on serialization to generate the objects; however, I didn't look at the source code.
 
 **Without a template, without caching**
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class FormatterServicesBuilderWithoutCachingWithoutGeneric
 {
     public static object Build(Type t)
@@ -79,7 +79,7 @@ public static class FormatterServicesBuilderWithoutCachingWithoutGeneric
 {{< / highlight >}}
 
 **Without a template, with caching**
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class FormatterServicesBuilderWithCachingWithoutGeneric
 {
     private static readonly Dictionary<Type, ConstructorInfo> cache = 
@@ -104,7 +104,7 @@ public static class FormatterServicesBuilderWithCachingWithoutGeneric
 {{< / highlight >}}
 
 **With a template, without caching**
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class FormatterServicesBuilderWithoutCachingWithGeneric<T>
 {
     public static T Build()
@@ -118,7 +118,7 @@ public static class FormatterServicesBuilderWithoutCachingWithGeneric<T>
 {{< / highlight >}}
 
 **With a template, with caching**
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class FormatterServicesBuilderWithCachingWithGeneric<T>
     {
         private static readonly Type t = typeof(T); 
@@ -137,7 +137,7 @@ public static class FormatterServicesBuilderWithCachingWithGeneric<T>
 These methods are often referenced as being the fastest way to generate objects at runtime. To a certain degree, that is true; however, there are some nuances to the topic that we will see when it comes to the benchmarks.
 
 **Without a template, without caching**
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class MsilBuilderWithoutCachingWithoutGeneric
 {
     public delegate object DynamicObjectActivator();
@@ -157,7 +157,7 @@ public static class MsilBuilderWithoutCachingWithoutGeneric
 {{< / highlight >}}
 
 **Without a template, with caching**
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class MsilBuilderWithCachingWithoutGeneric
 {
     public delegate object DynamicObjectActivator();
@@ -186,7 +186,7 @@ public static class MsilBuilderWithCachingWithoutGeneric
 {{< / highlight >}}
 
 **With a template, without caching**
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class MsilBuilderWithoutCachingWithoutGeneric
 {
     public delegate object DynamicObjectActivator();
@@ -206,7 +206,7 @@ public static class MsilBuilderWithoutCachingWithoutGeneric
 {{< / highlight >}}
 
 **With a template, with caching**
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class MsilBuilderWithCachingWithGeneric<T>
 {
     private static Type t = typeof(T);
@@ -237,7 +237,7 @@ public static class MsilBuilderWithCachingWithGeneric<T>
 This is the final benchmark that we'll be doing for this post. This is also often referred to the fastest way to generate an object dynamically at runtime. While this may be true, there are some nuances to this much like generating IL at runtime.
 
 **With a template, without caching**
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class LinqBuilderWithoutCachingWithGeneric
 {
     public static T Build<T>()
@@ -252,7 +252,7 @@ public static class LinqBuilderWithoutCachingWithGeneric
 {{< / highlight >}}
 
 **With a template, with caching**
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public static class LinqBuilderWithCachingWithGeneric<T>
 {
     private static readonly Type t = typeof(T);
@@ -273,7 +273,7 @@ Since I am a noob to writing benchmark code, I decided to use the framework benc
 
 The code was compiled in x64 with the /optimize flag. In addition to this the benchmarks were run without the debugger attached.
 
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 [ClrJob]
 [RPlotExporter, RankColumn]
 public class TheActualBenchmark

@@ -6,7 +6,7 @@ draft: false
 
 I find myself frequently setting up new projects with Caliburn Micro; however, It isn’t always easy to remember the code to integrate Autofac with the bootstrapper. So, here is the template that I use when creating a new application.
 
-{{< highlight csharp "linenos=table">}}
+{{< highlight csharp >}}
 public class ClientBootstrapper : BootstrapperBase
 {
     private static IContainer Container;
