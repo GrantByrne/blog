@@ -32,7 +32,11 @@ Since I don't have a SQL Server running that I can just attach to. I'll have to 
 4. Name that Database HangfireExperimentation
 5. Expand out that database
 6. Right click on the database that was just created and select "Properties"
-7. In the properties tab, copy the connection string and save it somewhere to use later. Mine was something like: Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=HangfireExperimentation;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False
+7. In the properties tab, copy the connection string and save it somewhere to use later. Mine was something like: 
+
+{{< highlight xml >}}
+Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=HangfireExperimentation;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False
+{{< /highlight >}}
 
 ## Set up the Nuget Packages
 
@@ -52,74 +56,82 @@ Since I don't have a SQL Server running that I can just attach to. I'll have to 
 
 My appsettings.json file ended up looking like this:
 
-    {
-    "Logging": {
-        "LogLevel": {
-        "Default": "Information",
-        "Microsoft": "Warning",
-        "Microsoft.Hosting.Lifetime": "Information",
-        "Hangfire": "Information"
-        }
-    },
-    "ConnectionStrings": {
-        "HangfireConnection": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HangfireExperimentation;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"
-    },
-    "AllowedHosts": "*"
+{{< highlight json >}}
+{
+"Logging": {
+    "LogLevel": {
+    "Default": "Information",
+    "Microsoft": "Warning",
+    "Microsoft.Hosting.Lifetime": "Information",
+    "Hangfire": "Information"
     }
+},
+"ConnectionStrings": {
+    "HangfireConnection": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HangfireExperimentation;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"
+},
+"AllowedHosts": "*"
+}
+{{< /highlight >}}
 
 ## Update the Startup.cs file
 
 1. Update the ConfigureServices() method so that it looks like this:
 
-    public void ConfigureServices(IServiceCollection services)
-    {
-        services.AddHangfire(configuration => configuration
-            .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
-            .UseSimpleAssemblyNameTypeSerializer()
-            .UseRecommendedSerializerSettings()
-            .UseSqlServerStorage(ConfigurationManager.ConnectionStrings["HangfireConnection"].ConnectionString, new SqlServerStorageOptions
-            {
-                CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-                SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-                QueuePollInterval = TimeSpan.Zero,
-                UseRecommendedIsolationLevel = true,
-                DisableGlobalLocks = true
-            }));
+{{< highlight "C#" >}}
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddHangfire(configuration => configuration
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseSqlServerStorage(ConfigurationManager.ConnectionStrings["HangfireConnection"].ConnectionString, new SqlServerStorageOptions
+        {
+            CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+            SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+            QueuePollInterval = TimeSpan.Zero,
+            UseRecommendedIsolationLevel = true,
+            DisableGlobalLocks = true
+        }));
 
-        services.AddHangfireServer();
+    services.AddHangfireServer();
 
-        services.AddMvc(option => option.EnableEndpointRouting = false);
-    }
+    services.AddMvc(option => option.EnableEndpointRouting = false);
+}
+{{< /highlight >}}
 
 2. Run through and add the missing references
 
 3. Add in the Configuration field that ConfigureServices(...) uses to get the connection string
 
-    public Startup(IConfiguration configuration)
-    {
-        Configuration = configuration;
-    }
+{{< highlight csharp >}}
+public Startup(IConfiguration configuration)
+{
+    Configuration = configuration;
+}
 
-    public IConfiguration Configuration { get; }
+public IConfiguration Configuration { get; }
+{{< /highlight >}}
 
 4. Update the Configure(...) method to look like this:
 
-    public void Configure(IApplicationBuilder app, 
-        IWebHostEnvironment env, 
-        IBackgroundJobClient backgroundJobs)
+{{< highlight csharp >}}
+public void Configure(IApplicationBuilder app, 
+    IWebHostEnvironment env, 
+    IBackgroundJobClient backgroundJobs)
+{
+    app.UseStaticFiles();
+
+    app.UseHangfireDashboard();
+    backgroundJobs.Enqueue(() => Console.WriteLine("Hello world from Hangfire!"));
+
+    app.UseMvc(routes =>
     {
-        app.UseStaticFiles();
-
-        app.UseHangfireDashboard();
-        backgroundJobs.Enqueue(() => Console.WriteLine("Hello world from Hangfire!"));
-
-        app.UseMvc(routes =>
-        {
-            routes.MapRoute(
-                name: "default",
-                template: "{controller=Home}/{action=Index}/{id?}");
-        });
-    }
+        routes.MapRoute(
+            name: "default",
+            template: "{controller=Home}/{action=Index}/{id?}");
+    });
+}
+{{< /highlight >}}
 
 ## Testing things out
 
