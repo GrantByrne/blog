@@ -6,51 +6,59 @@ Setting up a database to test with Since I don&rsquo;t have a SQL Server running
  Navigate to the website: https://www.microsoft.com/en-us/sql-server/sql-server-downloads Under the &ldquo;Express&rdquo; item at the bottom of the fold, hit the button &ldquo;Download Now >&rdquo; Run the installer Select &ldquo;Basic&rdquo; option Hit the &ldquo;Accept&rdquo; button without reading anything because I actually want to get some work done."><meta property="og:title" content="Getting Started With Hangfire"><meta property="og:description" content="Putting together this guide for testing out hangfire to fill in some of the gaps I found through creating a greenfield hangfire application.
 Setting up a database to test with Since I don&rsquo;t have a SQL Server running that I can just attach to. I&rsquo;ll have to run through the initial set up of SQL Express Edition
  Navigate to the website: https://www.microsoft.com/en-us/sql-server/sql-server-downloads Under the &ldquo;Express&rdquo; item at the bottom of the fold, hit the button &ldquo;Download Now >&rdquo; Run the installer Select &ldquo;Basic&rdquo; option Hit the &ldquo;Accept&rdquo; button without reading anything because I actually want to get some work done."><meta property="og:type" content="article"><meta property="og:url" content="/posts/getting-started-with-hangfire/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2021-05-02T22:00:44-04:00"><meta property="article:modified_time" content="2021-05-02T22:00:44-04:00"><meta property="og:site_name" content="Grant's Blog"></head><body class=dark-theme><div class=container><header class=header><span class=header__inner><a href=/ class=logo style=text-decoration:none><span class=logo__mark><svg xmlns="http://www.w3.org/2000/svg" class="greater-icon" viewBox="0 0 44 44"><path fill="none" d="M15 8l14.729 14.382L15 35.367"/></svg></span><span class=logo__text>Grant's Blog</span>
-<span class=logo__cursor></span></a><span class=header__right><nav class=menu><ul class="menu__inner menu__inner--desktop"><li><a href=/posts>Posts</a></li></ul><ul class="menu__inner menu__inner--mobile"><li><a href=/posts>Posts</a></li></ul></nav><span class=menu-trigger><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></span><span class=theme-toggle><svg class="theme-toggler" width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 41c10.4934.0 19-8.5066 19-19C41 11.5066 32.4934 3 22 3 11.5066 3 3 11.5066 3 22s8.5066 19 19 19zM7 22C7 13.7157 13.7157 7 22 7V37C13.7157 37 7 30.2843 7 22z"/></svg></span></span></span></header><div class=content><div class=post><h1 class=post-title>Getting Started With Hangfire</h1><div class=post-meta><span class=post-date>2021-05-02</span></div><div class=post-content><p>Putting together this guide for testing out hangfire to fill in some of the gaps I found through creating a greenfield hangfire application.</p><h2 id=setting-up-a-database-to-test-with>Setting up a database to test with</h2><p>Since I don&rsquo;t have a SQL Server running that I can just attach to. I&rsquo;ll have to run through the initial set up of SQL Express Edition</p><ol><li>Navigate to the website: <a href=https://www.microsoft.com/en-us/sql-server/sql-server-downloads>https://www.microsoft.com/en-us/sql-server/sql-server-downloads</a></li><li>Under the &ldquo;Express&rdquo; item at the bottom of the fold, hit the button &ldquo;Download Now >&rdquo;</li><li>Run the installer</li><li>Select &ldquo;Basic&rdquo; option</li><li>Hit the &ldquo;Accept&rdquo; button without reading anything because I actually want to get some work done.</li><li>Install it to the default directory</li></ol><h2 id=creating-the-blank-project-to-get-started>Creating the Blank Project to Get Started</h2><ol><li>Open up Visual Studio 2019</li><li>Choose &ldquo;Create a new Project&rdquo;</li><li>Search for asp.net project type. Since I would like to use the dashboard for this, I will have to use at least a .net core project. So, I selected the ASP.NET Core Empty project</li><li>I named the application HangfireExperimentation</li><li>Selected the Target Framework to be .NET 5.0 (Current).</li></ol><h2 id=setting-up-the-test-database-for-hangfire-to-use>Setting up the Test Database for Hangfire to Use</h2><ol><li>On the top menu go to View > SQL Server Object Explorer. This will open up a tab that allows you to navigate through the local database.</li><li>From this view: Expand out SQL Server > {You&rsquo;re localdb instance} > Databases</li><li>Right Click on Databases and select &ldquo;Add New Database&rdquo;</li><li>Name that Database HangfireExperimentation</li><li>Expand out that database</li><li>Right click on the database that was just created and select &ldquo;Properties&rdquo;</li><li>In the properties tab, copy the connection string and save it somewhere to use later. Mine was something like: Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=HangfireExperimentation;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False</li></ol><h2 id=set-up-the-nuget-packages>Set up the Nuget Packages</h2><ol><li>In the solution explorer, right click on the project and select &ldquo;Manage nuget Packages&mldr;&rdquo;</li><li>Click on the &ldquo;Browse&rdquo; tab in the window</li><li>Search for &ldquo;Hangfire&rdquo;</li><li>Install the following packages<ul><li>Hangfire.Core</li><li>Hangfire.SqlServer</li><li>Hangfire.AspNetCore</li></ul></li></ol><h2 id=updating-the-appsettingsjson-file>Updating the appsettings.json file</h2><ol><li>Open up the appsettings.json file</li><li>Update the LogLevel to include hangfire</li><li>Add the connection string that you saved earlier to the list of connection strings</li></ol><p>My appsettings.json file ended up looking like this:</p><pre><code>{
-&quot;Logging&quot;: {
-    &quot;LogLevel&quot;: {
-    &quot;Default&quot;: &quot;Information&quot;,
-    &quot;Microsoft&quot;: &quot;Warning&quot;,
-    &quot;Microsoft.Hosting.Lifetime&quot;: &quot;Information&quot;,
-    &quot;Hangfire&quot;: &quot;Information&quot;
+<span class=logo__cursor></span></a><span class=header__right><nav class=menu><ul class="menu__inner menu__inner--desktop"><li><a href=/posts>Posts</a></li></ul><ul class="menu__inner menu__inner--mobile"><li><a href=/posts>Posts</a></li></ul></nav><span class=menu-trigger><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></span><span class=theme-toggle><svg class="theme-toggler" width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 41c10.4934.0 19-8.5066 19-19C41 11.5066 32.4934 3 22 3 11.5066 3 3 11.5066 3 22s8.5066 19 19 19zM7 22C7 13.7157 13.7157 7 22 7V37C13.7157 37 7 30.2843 7 22z"/></svg></span></span></span></header><div class=content><div class=post><h1 class=post-title>Getting Started With Hangfire</h1><div class=post-meta><span class=post-date>2021-05-02</span></div><div class=post-content><p>Putting together this guide for testing out hangfire to fill in some of the gaps I found through creating a greenfield hangfire application.</p><h2 id=setting-up-a-database-to-test-with>Setting up a database to test with</h2><p>Since I don&rsquo;t have a SQL Server running that I can just attach to. I&rsquo;ll have to run through the initial set up of SQL Express Edition</p><ol><li>Navigate to the website: <a href=https://www.microsoft.com/en-us/sql-server/sql-server-downloads>https://www.microsoft.com/en-us/sql-server/sql-server-downloads</a></li><li>Under the &ldquo;Express&rdquo; item at the bottom of the fold, hit the button &ldquo;Download Now >&rdquo;</li><li>Run the installer</li><li>Select &ldquo;Basic&rdquo; option</li><li>Hit the &ldquo;Accept&rdquo; button without reading anything because I actually want to get some work done.</li><li>Install it to the default directory</li></ol><h2 id=creating-the-blank-project-to-get-started>Creating the Blank Project to Get Started</h2><ol><li>Open up Visual Studio 2019</li><li>Choose &ldquo;Create a new Project&rdquo;</li><li>Search for asp.net project type. Since I would like to use the dashboard for this, I will have to use at least a .net core project. So, I selected the ASP.NET Core Empty project</li><li>I named the application HangfireExperimentation</li><li>Selected the Target Framework to be .NET 5.0 (Current).</li></ol><h2 id=setting-up-the-test-database-for-hangfire-to-use>Setting up the Test Database for Hangfire to Use</h2><ol><li>On the top menu go to View > SQL Server Object Explorer. This will open up a tab that allows you to navigate through the local database.</li><li>From this view: Expand out SQL Server > {You&rsquo;re localdb instance} > Databases</li><li>Right Click on Databases and select &ldquo;Add New Database&rdquo;</li><li>Name that Database HangfireExperimentation</li><li>Expand out that database</li><li>Right click on the database that was just created and select &ldquo;Properties&rdquo;</li><li>In the properties tab, copy the connection string and save it somewhere to use later. Mine was something like:</li></ol><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-xml data-lang=xml>Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=HangfireExperimentation;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False</code></pre></div><h2 id=set-up-the-nuget-packages>Set up the Nuget Packages</h2><ol><li>In the solution explorer, right click on the project and select &ldquo;Manage nuget Packages&mldr;&rdquo;</li><li>Click on the &ldquo;Browse&rdquo; tab in the window</li><li>Search for &ldquo;Hangfire&rdquo;</li><li>Install the following packages<ul><li>Hangfire.Core</li><li>Hangfire.SqlServer</li><li>Hangfire.AspNetCore</li></ul></li></ol><h2 id=updating-the-appsettingsjson-file>Updating the appsettings.json file</h2><ol><li>Open up the appsettings.json file</li><li>Update the LogLevel to include hangfire</li><li>Add the connection string that you saved earlier to the list of connection strings</li></ol><p>My appsettings.json file ended up looking like this:</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+<span style=color:#f92672>&#34;Logging&#34;</span>: {
+    <span style=color:#f92672>&#34;LogLevel&#34;</span>: {
+    <span style=color:#f92672>&#34;Default&#34;</span>: <span style=color:#e6db74>&#34;Information&#34;</span>,
+    <span style=color:#f92672>&#34;Microsoft&#34;</span>: <span style=color:#e6db74>&#34;Warning&#34;</span>,
+    <span style=color:#f92672>&#34;Microsoft.Hosting.Lifetime&#34;</span>: <span style=color:#e6db74>&#34;Information&#34;</span>,
+    <span style=color:#f92672>&#34;Hangfire&#34;</span>: <span style=color:#e6db74>&#34;Information&#34;</span>
     }
 },
-&quot;ConnectionStrings&quot;: {
-    &quot;HangfireConnection&quot;: &quot;Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HangfireExperimentation;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False&quot;
+<span style=color:#f92672>&#34;ConnectionStrings&#34;</span>: {
+    <span style=color:#f92672>&#34;HangfireConnection&#34;</span>: <span style=color:#e6db74>&#34;Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=HangfireExperimentation;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False&#34;</span>
 },
-&quot;AllowedHosts&quot;: &quot;*&quot;
+<span style=color:#f92672>&#34;AllowedHosts&#34;</span>: <span style=color:#e6db74>&#34;*&#34;</span>
+}</code></pre></div><h2 id=update-the-startupcs-file>Update the Startup.cs file</h2><ol><li>Update the ConfigureServices() method so that it looks like this:</li></ol><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-C# data-lang=C#><span style=color:#66d9ef>public</span> <span style=color:#66d9ef>void</span> ConfigureServices(IServiceCollection services)
+{
+    services.AddHangfire(configuration =&gt; configuration
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseSqlServerStorage(ConfigurationManager.ConnectionStrings[<span style=color:#e6db74>&#34;HangfireConnection&#34;</span>].ConnectionString, <span style=color:#66d9ef>new</span> SqlServerStorageOptions
+        {
+            CommandBatchMaxTimeout = TimeSpan.FromMinutes(<span style=color:#ae81ff>5</span>),
+            SlidingInvisibilityTimeout = TimeSpan.FromMinutes(<span style=color:#ae81ff>5</span>),
+            QueuePollInterval = TimeSpan.Zero,
+            UseRecommendedIsolationLevel = <span style=color:#66d9ef>true</span>,
+            DisableGlobalLocks = <span style=color:#66d9ef>true</span>
+        }));
+
+    services.AddHangfireServer();
+
+    services.AddMvc(option =&gt; option.EnableEndpointRouting = <span style=color:#66d9ef>false</span>);
 }
-</code></pre><h2 id=update-the-startupcs-file>Update the Startup.cs file</h2><ol><li><p>Update the ConfigureServices() method so that it looks like this:</p><p>public void ConfigureServices(IServiceCollection services)
+</code></pre></div><ol start=2><li><p>Run through and add the missing references</p></li><li><p>Add in the Configuration field that ConfigureServices(&mldr;) uses to get the connection string</p></li></ol><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-csharp data-lang=csharp><span style=color:#66d9ef>public</span> Startup(IConfiguration configuration)
 {
-services.AddHangfire(configuration => configuration
-.SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
-.UseSimpleAssemblyNameTypeSerializer()
-.UseRecommendedSerializerSettings()
-.UseSqlServerStorage(ConfigurationManager.ConnectionStrings[&ldquo;HangfireConnection&rdquo;].ConnectionString, new SqlServerStorageOptions
-{
-CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-QueuePollInterval = TimeSpan.Zero,
-UseRecommendedIsolationLevel = true,
-DisableGlobalLocks = true
-}));</p><pre><code> services.AddHangfireServer();
+    Configuration = configuration;
+}
 
- services.AddMvc(option =&gt; option.EnableEndpointRouting = false);
-</code></pre><p>}</p></li><li><p>Run through and add the missing references</p></li><li><p>Add in the Configuration field that ConfigureServices(&mldr;) uses to get the connection string</p><p>public Startup(IConfiguration configuration)
+<span style=color:#66d9ef>public</span> IConfiguration Configuration { <span style=color:#66d9ef>get</span>; }
+</code></pre></div><ol start=4><li>Update the Configure(&mldr;) method to look like this:</li></ol><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-csharp data-lang=csharp><span style=color:#66d9ef>public</span> <span style=color:#66d9ef>void</span> Configure(IApplicationBuilder app, 
+    IWebHostEnvironment env, 
+    IBackgroundJobClient backgroundJobs)
 {
-Configuration = configuration;
-}</p><p>public IConfiguration Configuration { get; }</p></li><li><p>Update the Configure(&mldr;) method to look like this:</p><p>public void Configure(IApplicationBuilder app,
-IWebHostEnvironment env,
-IBackgroundJobClient backgroundJobs)
-{
-app.UseStaticFiles();</p><pre><code> app.UseHangfireDashboard();
- backgroundJobs.Enqueue(() =&gt; Console.WriteLine(&quot;Hello world from Hangfire!&quot;));
+    app.UseStaticFiles();
 
- app.UseMvc(routes =&gt;
- {
-     routes.MapRoute(
-         name: &quot;default&quot;,
-         template: &quot;{controller=Home}/{action=Index}/{id?}&quot;);
- });
-</code></pre><p>}</p></li></ol><h2 id=testing-things-out>Testing things out</h2><ol><li>Hit play on Visual Studio</li><li>Since this was created with blank project</li><li>Navigate to the hangfire dashboard. My url was: https://localhost:44321/hangfire</li><li>&mldr;</li><li>PROFIT?!!</li></ol></div><div class=pagination><div class=pagination__title><span class=pagination__title-h>Read other posts</span><hr></div><div class=pagination__buttons><span class="button next"><a href=/posts/activatorcreateinstancealternativetesting/><span class=button__text>Activator.CreateInstance Alternatives with Benchmarks</span>
+    app.UseHangfireDashboard();
+    backgroundJobs.Enqueue(() =&gt; Console.WriteLine(<span style=color:#e6db74>&#34;Hello world from Hangfire!&#34;</span>));
+
+    app.UseMvc(routes =&gt;
+    {
+        routes.MapRoute(
+            name: <span style=color:#e6db74>&#34;default&#34;</span>,
+            template: <span style=color:#e6db74>&#34;{controller=Home}/{action=Index}/{id?}&#34;</span>);
+    });
+}
+</code></pre></div><h2 id=testing-things-out>Testing things out</h2><ol><li>Hit play on Visual Studio</li><li>Since this was created with blank project</li><li>Navigate to the hangfire dashboard. My url was: https://localhost:44321/hangfire</li><li>&mldr;</li><li>PROFIT?!!</li></ol></div><div class=pagination><div class=pagination__title><span class=pagination__title-h>Read other posts</span><hr></div><div class=pagination__buttons><span class="button next"><a href=/posts/activatorcreateinstancealternativetesting/><span class=button__text>Activator.CreateInstance Alternatives with Benchmarks</span>
 <span class=button__icon>→</span></a></span></div></div></div></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user">Grant Byrne 2021</div></div></footer><script src=/assets/main.js></script><script src=/assets/prism.js></script></div></body></html>
