@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+      <title>
+        Activator.CreateInstance Alternatives with Benchmarks ::
+        Grant&#39;s Blog — Hi, my name is Grant. I like to write software and do other things too
+      </title>
+    
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta
+  name="description"
+  content=".NET provides multiple ways of generating objects at runtime. Each of these options offer their own trades offs in terms of performance. I will demonstrate that not only are there great performance gains to be had over Activator.CreateInstance(&amp;hellip;), but I will also show that there are nuances to how you set up these classes that can dramatically effect performance.
+Why is this important? While there may be more applications, two examples that I can think of that rely on generating objects at runtime are game development frameworks and IOC (inversion of control) containers."
+/>
+<meta
+  name="keywords"
+  content="csharp, .net, programming"
+/>
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="/posts/activatorcreateinstancealternativetesting/" />
+
+
+
+
+
+<link rel="stylesheet" href="/assets/style.css" />
+
+<link rel="stylesheet" href="/style.css" />
+
+
+<link
+  rel="apple-touch-icon-precomposed"
+  sizes="144x144"
+  href="/img/apple-touch-icon-144-precomposed.png"
+/>
+<link rel="shortcut icon" href="/img/favicon.png" />
+
+
+<link href="/assets/fonts/Inter-Italic.woff2" rel="preload" type="font/woff2" as="font" crossorigin="">
+<link href="/assets/fonts/Inter-Regular.woff2" rel="preload" type="font/woff2" as="font" crossorigin="">
+<link href="/assets/fonts/Inter-Medium.woff2" rel="preload" type="font/woff2" as="font" crossorigin="">
+<link href="/assets/fonts/Inter-MediumItalic.woff2" rel="preload" type="font/woff2" as="font" crossorigin="">
+<link href="/assets/fonts/Inter-Bold.woff2" rel="preload" type="font/woff2" as="font" crossorigin="">
+<link href="/assets/fonts/Inter-BoldItalic.woff2" rel="preload" type="font/woff2" as="font" crossorigin="">
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Activator.CreateInstance Alternatives with Benchmarks"/>
+<meta name="twitter:description" content=".NET provides multiple ways of generating objects at runtime. Each of these options offer their own trades offs in terms of performance. I will demonstrate that not only are there great performance gains to be had over Activator.CreateInstance(&hellip;), but I will also show that there are nuances to how you set up these classes that can dramatically effect performance.
+Why is this important? While there may be more applications, two examples that I can think of that rely on generating objects at runtime are game development frameworks and IOC (inversion of control) containers."/>
+
+
+
+<meta property="og:title" content="Activator.CreateInstance Alternatives with Benchmarks" />
+<meta property="og:description" content=".NET provides multiple ways of generating objects at runtime. Each of these options offer their own trades offs in terms of performance. I will demonstrate that not only are there great performance gains to be had over Activator.CreateInstance(&hellip;), but I will also show that there are nuances to how you set up these classes that can dramatically effect performance.
+Why is this important? While there may be more applications, two examples that I can think of that rely on generating objects at runtime are game development frameworks and IOC (inversion of control) containers." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/posts/activatorcreateinstancealternativetesting/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2018-08-24T15:52:48-04:00" />
+<meta property="article:modified_time" content="2018-08-24T15:52:48-04:00" /><meta property="og:site_name" content="Grant&#39;s Blog" />
+
+
+
+
+
+
+
+  </head>
+  <body class="dark-theme">
+    <div class="container">
+      <header class="header">
+  <span class="header__inner">
+    <a
+  href="/"
+  class="logo"
+  style="text-decoration: none;"
+>
+  
+    <span class="logo__mark"><svg xmlns="http://www.w3.org/2000/svg" class="greater-icon" viewBox="0 0 44 44">
+  <path fill="none" d="M15 8l14.729 14.382L15 35.367" />
+</svg>
+</span>
+    <span class="logo__text"
+      >Grant&#39;s Blog</span
+    >
+    <span class="logo__cursor"></span>
+  
+</a>
+
+    <span class="header__right">
+      
+        <nav class="menu">
+  <ul class="menu__inner menu__inner--desktop">
+    
+      
+        
+          <li><a href="/about">About</a></li>
+        
+      
+        
+          <li><a href="/posts">Posts</a></li>
+        
+      
+      
+      
+  </ul>
+
+  <ul class="menu__inner menu__inner--mobile">
+    
+      
+        <li><a href="/about">About</a></li>
+      
+    
+      
+        <li><a href="/posts">Posts</a></li>
+      
+    
+  </ul>
+</nav>
+
+        <span class="menu-trigger">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M0 0h24v24H0z" fill="none" />
+            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+          </svg>
+        </span>
+      
+      <span class="theme-toggle">
+        <svg
+  class="theme-toggler"
+  width="24"
+  height="24"
+  viewBox="0 0 48 48"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <path
+    d="M22 41C32.4934 41 41 32.4934 41 22C41 11.5066 32.4934 3 22
+  3C11.5066 3 3 11.5066 3 22C3 32.4934 11.5066 41 22 41ZM7 22C7
+  13.7157 13.7157 7 22 7V37C13.7157 37 7 30.2843 7 22Z"
+  />
+</svg>
+
+      </span>
+    </span>
+  </span>
+</header>
+
+
+      <div class="content">
+        
+  
+  
+
+  <div class="post">
+    <h1 class="post-title">Activator.CreateInstance Alternatives with Benchmarks</h1>
+    <div class="post-meta">
+      
+        <span class="post-date">
+          2018-08-24
+        </span>
+
+        
+          
+        
+      
+
+      
+
+
+      
+    </div>
+
+    
+
+    
+
+    <div class="post-content">
+      
+      <p>.NET provides multiple ways of generating objects at runtime. Each of these options offer their own trades offs in terms of performance. I will demonstrate that not only are there great performance gains to be had over Activator.CreateInstance(&hellip;), but I will also show that there are nuances to how you set up these classes that can dramatically effect performance.</p>
+<h2 id="why-is-this-important">Why is this important?</h2>
+<p>While there may be more applications, two examples that I can think of that rely on generating objects at runtime are game development frameworks and IOC (inversion of control) containers. Many game develoment environments are set up to create and manipulate objects that are dynamically loaded in. Being able to do that quickly is super important especially with the recent boom of game development in C# as of late.</p>
+<p>IOC containers also need to be able to generate objects quickly because applications that use them will typically rely on the framework to generate most of the objects in the application.</p>
+<p>I decided to put together this analysis because I recently started working on a legacy codebase that relies a great deal on Activater.CreateInstance for instantiating objects. Swapping out the implementation of Activater.CreateInstance could load to some better performance. I may report back with my findings.</p>
+<h2 id="show-me-the-code">Show me the code!</h2>
+<p>I want you to be able to verify my results if you wish. As such, I&rsquo;ve put together a github repo with all the code I used to do these benchmarks: <a href="https://github.com/holymoo/DynamicObjectCreationBenchmark">https://github.com/holymoo/DynamicObjectCreationBenchmark</a></p>
+<p>In addition to this, I&rsquo;m going to break down each segment that I tested in these benchmarks.</p>
+<h3 id="the-new-operator">the &lsquo;new&rsquo; operator</h3>
+<p>The new operator is the normal way of creating new objects in C#.</p>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">NewBuilder</span>
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> TestObject Build()
+    {
+        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> TestObject();
+    }
+}</code></pre></td></tr></table>
+</div>
+</div>
+<p>This is included because it will serve as our baseline to show us how much performance we are losing by dynamically generating our objects at runtime.</p>
+<h3 id="activatorcreateinstance">Activator.CreateInstance</h3>
+<p>This is the simplest and most common way of generating objects at runtime. It&rsquo;s simple to write and is generally performant enough for most things, <strong>but we can do better.</strong></p>
+<p><strong>Create Instance without a Template</strong>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ActivatorCreateBuilderWithoutGeneric</span>
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> TestObject Build()
+    {
+        <span style="color:#66d9ef">return</span> (TestObject)Activator.CreateInstance(<span style="color:#66d9ef">typeof</span>(TestObject));
+    }
+}</code></pre></td></tr></table>
+</div>
+</div></p>
+<p><strong>Create Instance with a Template</strong>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ActivatorCreateBuilderWithGeneric</span>
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> TestObject Build()
+    {
+        <span style="color:#66d9ef">return</span> Activator.CreateInstance&lt;TestObject&gt;();
+    }
+}</code></pre></td></tr></table>
+</div>
+</div></p>
+<p>I&rsquo;m including both the templated and the non-templated version in this test because there can be performance implications demonstrated in the other methods.</p>
+<h3 id="serialization">Serialization</h3>
+<p>These methods rely on combination of the System.Reflection and System.Runtime.Serialization namespaces. I believe these methods rely primarily on serialization to generate the objects; however, I didn&rsquo;t look at the source code.</p>
+<p><strong>Without a template, without caching</strong>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">9
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">FormatterServicesBuilderWithoutCachingWithoutGeneric</span>
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">object</span> Build(Type t)
+    {
+        <span style="color:#66d9ef">var</span> o = FormatterServices.GetUninitializedObject(t);
+        <span style="color:#66d9ef">var</span> ctor = t.GetConstructors()[<span style="color:#ae81ff">0</span>];
+        <span style="color:#66d9ef">return</span> ctor.Invoke(o, <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">object</span>[] { });
+    }
+}</code></pre></td></tr></table>
+</div>
+</div></p>
+<p><strong>Without a template, with caching</strong>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">FormatterServicesBuilderWithCachingWithoutGeneric</span>
+{
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> Dictionary&lt;Type, ConstructorInfo&gt; cache = 
+        <span style="color:#66d9ef">new</span> Dictionary&lt;Type, ConstructorInfo&gt;();
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">object</span> Build(Type t)
+    {
+        <span style="color:#66d9ef">if</span> (cache.TryGetValue(t, <span style="color:#66d9ef">out</span> ConstructorInfo ctor))
+        {
+            <span style="color:#66d9ef">var</span> o = FormatterServices.GetUninitializedObject(t);
+            <span style="color:#66d9ef">return</span> ctor.Invoke(o, <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">object</span>[] { });
+        }
+        <span style="color:#66d9ef">else</span>
+        {
+            <span style="color:#66d9ef">var</span> o = FormatterServices.GetUninitializedObject(t);
+            ctor = t.GetConstructors()[<span style="color:#ae81ff">0</span>];
+            cache.Add(t, ctor);
+            <span style="color:#66d9ef">return</span> ctor.Invoke(o, <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">object</span>[] { });
+        }
+    }
+}</code></pre></td></tr></table>
+</div>
+</div></p>
+<p><strong>With a template, without caching</strong>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">FormatterServicesBuilderWithoutCachingWithGeneric</span>&lt;T&gt;
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> T Build()
+    {
+        <span style="color:#66d9ef">var</span> t = <span style="color:#66d9ef">typeof</span>(T);
+        <span style="color:#66d9ef">var</span> o = FormatterServices.GetUninitializedObject(t);
+        <span style="color:#66d9ef">var</span> ctor = t.GetConstructors()[<span style="color:#ae81ff">0</span>];
+        <span style="color:#66d9ef">return</span> (T)ctor.Invoke(o, <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">object</span>[] { });
+    }
+}</code></pre></td></tr></table>
+</div>
+</div></p>
+<p><strong>With a template, with caching</strong>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">FormatterServicesBuilderWithCachingWithGeneric</span>&lt;T&gt;
+    {
+        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> Type t = <span style="color:#66d9ef">typeof</span>(T); 
+        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> ConstructorInfo ctor = t.GetConstructors()[<span style="color:#ae81ff">0</span>];
+
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> T Build()
+        {
+            <span style="color:#66d9ef">var</span> o = FormatterServices.GetUninitializedObject(t);
+            <span style="color:#66d9ef">return</span> (T)ctor.Invoke(o, <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">object</span>[] { });
+        }
+    }</code></pre></td></tr></table>
+</div>
+</div></p>
+<h3 id="emitting-il">Emitting IL</h3>
+<p>These methods are often referenced as being the fastest way to generate objects at runtime. To a certain degree, that is true; however, there are some nuances to the topic that we will see when it comes to the benchmarks.</p>
+<p><strong>Without a template, without caching</strong>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MsilBuilderWithoutCachingWithoutGeneric</span>
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">delegate</span> <span style="color:#66d9ef">object</span> DynamicObjectActivator();
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">object</span> Build(Type t)
+    {
+        <span style="color:#66d9ef">var</span> dynamicMethod = <span style="color:#66d9ef">new</span> DynamicMethod(<span style="color:#e6db74">&#34;CreateInstance&#34;</span>, t, Type.EmptyTypes, <span style="color:#66d9ef">true</span>);
+        <span style="color:#66d9ef">var</span> ilGenerator = dynamicMethod.GetILGenerator();
+        ilGenerator.Emit(OpCodes.Nop);
+        ConstructorInfo emptyConstructor = t.GetConstructor(Type.EmptyTypes);
+        ilGenerator.Emit(OpCodes.Newobj, emptyConstructor);
+        ilGenerator.Emit(OpCodes.Ret);
+        <span style="color:#66d9ef">var</span> del = (DynamicObjectActivator)dynamicMethod.CreateDelegate(<span style="color:#66d9ef">typeof</span>(DynamicObjectActivator));
+        <span style="color:#66d9ef">return</span> del();
+    }
+}</code></pre></td></tr></table>
+</div>
+</div></p>
+<p><strong>Without a template, with caching</strong>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MsilBuilderWithCachingWithoutGeneric</span>
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">delegate</span> <span style="color:#66d9ef">object</span> DynamicObjectActivator();
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> Dictionary&lt;Type, DynamicObjectActivator&gt; cache = <span style="color:#66d9ef">new</span> Dictionary&lt;Type, DynamicObjectActivator&gt;();
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">object</span> Build(Type t)
+    {
+        <span style="color:#66d9ef">if</span>(cache.TryGetValue(t, <span style="color:#66d9ef">out</span> DynamicObjectActivator <span style="color:#66d9ef">value</span>))
+        {
+            <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">value</span>();
+        }
+
+        <span style="color:#66d9ef">var</span> dynamicMethod = <span style="color:#66d9ef">new</span> DynamicMethod(<span style="color:#e6db74">&#34;CreateInstance&#34;</span>, t, Type.EmptyTypes, <span style="color:#66d9ef">true</span>);
+        <span style="color:#66d9ef">var</span> ilGenerator = dynamicMethod.GetILGenerator();
+        ilGenerator.Emit(OpCodes.Nop);
+        ConstructorInfo emptyConstructor = t.GetConstructor(Type.EmptyTypes);
+        ilGenerator.Emit(OpCodes.Newobj, emptyConstructor);
+        ilGenerator.Emit(OpCodes.Ret);
+
+        <span style="color:#66d9ef">var</span> del = (DynamicObjectActivator)dynamicMethod.CreateDelegate(<span style="color:#66d9ef">typeof</span>(DynamicObjectActivator));
+        cache.Add(t, del);
+
+        <span style="color:#66d9ef">return</span> del();
+    }
+}</code></pre></td></tr></table>
+</div>
+</div></p>
+<p><strong>With a template, without caching</strong>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MsilBuilderWithoutCachingWithoutGeneric</span>
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">delegate</span> <span style="color:#66d9ef">object</span> DynamicObjectActivator();
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">object</span> Build(Type t)
+    {
+        <span style="color:#66d9ef">var</span> dynamicMethod = <span style="color:#66d9ef">new</span> DynamicMethod(<span style="color:#e6db74">&#34;CreateInstance&#34;</span>, t, Type.EmptyTypes, <span style="color:#66d9ef">true</span>);
+        <span style="color:#66d9ef">var</span> ilGenerator = dynamicMethod.GetILGenerator();
+        ilGenerator.Emit(OpCodes.Nop);
+        ConstructorInfo emptyConstructor = t.GetConstructor(Type.EmptyTypes);
+        ilGenerator.Emit(OpCodes.Newobj, emptyConstructor);
+        ilGenerator.Emit(OpCodes.Ret);
+        <span style="color:#66d9ef">var</span> del = (DynamicObjectActivator)dynamicMethod.CreateDelegate(<span style="color:#66d9ef">typeof</span>(DynamicObjectActivator));
+        <span style="color:#66d9ef">return</span> del();
+    }
+}</code></pre></td></tr></table>
+</div>
+</div></p>
+<p><strong>With a template, with caching</strong>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MsilBuilderWithCachingWithGeneric</span>&lt;T&gt;
+{
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> Type t = <span style="color:#66d9ef">typeof</span>(T);
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> Func&lt;T&gt; func;
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> T Build()
+    {
+        <span style="color:#66d9ef">if</span>(func != <span style="color:#66d9ef">null</span>)
+        {
+            <span style="color:#66d9ef">return</span> func();
+        }
+
+        <span style="color:#66d9ef">var</span> dynamicMethod = <span style="color:#66d9ef">new</span> DynamicMethod(<span style="color:#e6db74">&#34;CreateInstance&#34;</span>, t, Type.EmptyTypes, <span style="color:#66d9ef">true</span>);
+        <span style="color:#66d9ef">var</span> ilGenerator = dynamicMethod.GetILGenerator();
+        ilGenerator.Emit(OpCodes.Nop);
+        ConstructorInfo emptyConstructor = t.GetConstructor(Type.EmptyTypes);
+        ilGenerator.Emit(OpCodes.Newobj, emptyConstructor);
+        ilGenerator.Emit(OpCodes.Ret);
+
+        func = (Func&lt;T&gt;)dynamicMethod.CreateDelegate(<span style="color:#66d9ef">typeof</span>(Func&lt;T&gt;));
+        <span style="color:#66d9ef">return</span> func();
+    }
+}</code></pre></td></tr></table>
+</div>
+</div></p>
+<h3 id="compiled-linq-method">Compiled Linq method</h3>
+<p>This is the final benchmark that we&rsquo;ll be doing for this post. This is also often referred to the fastest way to generate an object dynamically at runtime. While this may be true, there are some nuances to this much like generating IL at runtime.</p>
+<p><strong>With a template, without caching</strong>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">LinqBuilderWithoutCachingWithGeneric</span>
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> T Build&lt;T&gt;()
+    {
+        <span style="color:#66d9ef">var</span> t = <span style="color:#66d9ef">typeof</span>(T);
+        <span style="color:#66d9ef">var</span> ex = <span style="color:#66d9ef">new</span> Expression[] { Expression.New(t) };
+        <span style="color:#66d9ef">var</span> block = Expression.Block(t, ex);
+        <span style="color:#66d9ef">var</span> builder = Expression.Lambda&lt;Func&lt;T&gt;&gt;(block).Compile();
+        <span style="color:#66d9ef">return</span> builder();
+    }
+}</code></pre></td></tr></table>
+</div>
+</div></p>
+<p><strong>With a template, with caching</strong>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">LinqBuilderWithCachingWithGeneric</span>&lt;T&gt;
+{
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> Type t = <span style="color:#66d9ef">typeof</span>(T);
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> Expression[] ex = <span style="color:#66d9ef">new</span> Expression[] { Expression.New(t) };
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> BlockExpression block = Expression.Block(t, ex);
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> Func&lt;T&gt; builder = Expression.Lambda&lt;Func&lt;T&gt;&gt;(block).Compile();
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> T Build()
+    {
+        <span style="color:#66d9ef">return</span> builder();
+    }
+}</code></pre></td></tr></table>
+</div>
+</div></p>
+<h3 id="the-actual-testing-code">The actual testing code</h3>
+<p>Since I am a noob to writing benchmark code, I decided to use the framework benchmark .net for doing this performance analysis. The framework was really nice for providing easy testing and making sure the environment was set up to not introduce side effects that could skew the results.</p>
+<p>The code was compiled in x64 with the /optimize flag. In addition to this the benchmarks were run without the debugger attached.</p>
+<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">42
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">46
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">47
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">48
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">49
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">50
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">51
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">52
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">53
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">54
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">55
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">56
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">57
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">58
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">59
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">60
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">61
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">62
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">63
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-csharp" data-lang="csharp"><span style="color:#a6e22e">[ClrJob]</span>
+<span style="color:#a6e22e">[RPlotExporter, RankColumn]</span>
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">TheActualBenchmark</span>
+{
+<span style="color:#a6e22e">    [Params(1000000)]</span>
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> N;
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject StandardNew() =&gt; NewBuilder.Build();
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject ActivatorCreateBuilderWithoutGenericTest() =&gt; 
+        ActivatorCreateBuilderWithoutGeneric.Build();
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject ActivatorCreateBuilderWithGenericTest() =&gt; 
+        ActivatorCreateBuilderWithGeneric.Build();
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject FormatterServicesBuilderWithoutCachingWithoutGenericTest() =&gt; 
+        (TestObject)FormatterServicesBuilderWithoutCachingWithoutGeneric
+            .Build(<span style="color:#66d9ef">typeof</span>(TestObject));
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject FormatterServicesBuilderWithCachingWithoutGenericTest() =&gt;
+        (TestObject)FormatterServicesBuilderWithoutCachingWithoutGeneric
+            .Build(<span style="color:#66d9ef">typeof</span>(TestObject));
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject FormatterServicesBuilderWithoutCachingWithGenericTest() =&gt;
+        FormatterServicesBuilderWithoutCachingWithGeneric&lt;TestObject&gt;
+            .Build();
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject FormatterServicesBuilderWithCachingWithGenericTest() =&gt;
+        FormatterServicesBuilderWithCachingWithGeneric&lt;TestObject&gt;.Build();
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject MsilBuilderWithoutCachingWithoutGenericTest() =&gt;
+        (TestObject)MsilBuilderWithoutCachingWithoutGeneric
+            .Build(<span style="color:#66d9ef">typeof</span>(TestObject));
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject MsilBuilderWithCachingWithoutGenericTest() =&gt;
+        (TestObject)MsilBuilderWithCachingWithoutGeneric
+            .Build(<span style="color:#66d9ef">typeof</span>(TestObject));
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject MsilBuilderWithoutCachingWithGenericTest() =&gt;
+        MsilBuilderWithoutCachingWithGeneric&lt;TestObject&gt;.Build();
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject MsilBuilderWithCachingWithGeneric() =&gt;
+        MsilBuilderWithCachingWithGeneric&lt;TestObject&gt;.Build();
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject LinqBuilderWithoutCachingWithGenericTest() =&gt;
+        LinqBuilderWithoutCachingWithGeneric.Build&lt;TestObject&gt;();
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [Benchmark]</span>
+    <span style="color:#66d9ef">public</span> TestObject LinqBuilderWithCachingWithGenericTest() =&gt;
+        LinqBuilderWithCachingWithGeneric&lt;TestObject&gt;.Build();
+}</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="show-me-the-results">Show me the results!</h2>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Method</th>
+<th>Mean</th>
+<th>StdDev</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td>Standard New</td>
+<td>2.057 ns</td>
+<td>0.0291 ns</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>Linq Builder w/ Caching w/ Generic</td>
+<td>10.443 ns</td>
+<td>0.0219 ns</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>Msil Builder w/ Caching w/ Generic</td>
+<td>18.629 ns</td>
+<td>0.0363 ns</td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td>MsilBuilderWithCaching w/o Generic</td>
+<td>32.084 ns</td>
+<td>0.1033 ns</td>
+</tr>
+<tr>
+<td><strong>5</strong></td>
+<td>ActivatorCreateBuilder w/o Generic</td>
+<td>37.118 ns</td>
+<td>0.1491 ns</td>
+</tr>
+<tr>
+<td><strong>6</strong></td>
+<td>ActivatorCreateBuilder w/ Generic</td>
+<td>44.275 ns</td>
+<td>0.1224 ns</td>
+</tr>
+<tr>
+<td><strong>7</strong></td>
+<td>FormatterServicesBuilder v Caching w/ Generic</td>
+<td>157.669 ns</td>
+<td>1.6577 ns</td>
+</tr>
+<tr>
+<td><strong>8</strong></td>
+<td>FormatterServicesBuilder w/o Caching w/o Generic</td>
+<td>203.001 ns</td>
+<td>0.4439 ns</td>
+</tr>
+<tr>
+<td><strong>9</strong></td>
+<td>FormatterServicesBuilder w/ Caching w/o Generic</td>
+<td>205.826 ns</td>
+<td>0.3978 ns</td>
+</tr>
+<tr>
+<td><strong>10</strong></td>
+<td>FormatterServicesBuilder w/o Caching w/ Generic</td>
+<td>206.732 ns</td>
+<td>0.3488 ns</td>
+</tr>
+<tr>
+<td><strong>11</strong></td>
+<td>MsilBuilder w/o Caching w/ Generic</td>
+<td>61,932.402 ns</td>
+<td>764.5614 ns</td>
+</tr>
+<tr>
+<td><strong>12</strong></td>
+<td>MsilBuilder w/o Caching w/o Generic</td>
+<td>62,795.093 ns</td>
+<td>494.1148 ns</td>
+</tr>
+<tr>
+<td><strong>13</strong></td>
+<td>LinqBuilder w/o Caching w/ Generic</td>
+<td>76,461.628 ns</td>
+<td>998.5591 ns</td>
+</tr>
+</tbody>
+</table>
+<h3 id="based-of-of-these-results-we-can-draw-some-pretty-solid-conclusions">Based of of these results we can draw some pretty solid conclusions</h3>
+<ol>
+<li>The fastest way by far to create an object is by using the new operator. Using the new operator yields performance this is about 18 times faster than Activater.CreateInstance and about 5 times faster than our fastest dynamic implementation.</li>
+<li>If you can specify the class via a generic, your fastest implementation is going to be using the Linq builder implementation with caching. It&rsquo;s performance was about three times faster than Activator.CreateInstance.</li>
+<li>If you have to specify your type via the typeof operator, than the fastest implementation is going to be with dynamically generating Msil code. Using this method produced objects in about half the time compared to Activater.CreateInstance.</li>
+<li>If you&rsquo;re going to try writing your own object creation code, please use caching. None of the implementaions tested were about to compete with Activator.CreateInstance unless they used some form of method caching. Furthermore, without caching our fastest implementation ended up becoming our slowest method of dynamically generating an object.</li>
+<li>If you plan on only creating on object once, you&rsquo;re better off using Activator.CreateInstance. The method that performed the best in this test did so because they were able to cache the process of building the object.</li>
+<li>Formatter services should never be used for building objects at runtime.</li>
+</ol>
+<h2 id="thanks">Thanks!</h2>
+<p>I really appreciate you taking the time to read to the end. This information took several days to code, tabulate, and review. I hope you found it helpful.</p>
+
+    </div>
+    
+      
+        <div class="pagination">
+          <div class="pagination__title">
+            <span class="pagination__title-h"
+              >Read other posts</span
+            >
+            <hr />
+          </div>
+          <div class="pagination__buttons">
+            
+            
+              <span class="button next">
+                <a href="/posts/settingupautofacwithcaliburnmicro/">
+                  <span class="button__text">Setting up Autofac with Caliburn Micro v3.2.0 and Autofac v4.8.1</span>
+                  <span class="button__icon">→</span>
+                </a>
+              </span>
+            
+          </div>
+        </div>
+      
+    
+
+    
+      
+        
+
+      
+    
+  </div>
+
+      </div>
+
+      
+        <footer class="footer">
+  <div class="footer__inner">
+    
+      <div class="copyright copyright--user">Grant Byrne 2021</div>
+      
+  </div>
+</footer>
+
+<script src="/assets/main.js"></script>
+<script src="/assets/prism.js"></script>
+
+
+      
+    </div>
+
+    
+  </body>
+</html>

@@ -1,9 +1,9 @@
 ---
-layout: post
-title:  "First Post"
-date:   2018-08-15T22:16:38-04:00
-categories: life blog
+title: "First Post"
+date: 2018-08-15T22:16:38-04:00
+draft: false
 ---
+
 Hello World!
 
 After multiple attempts in the past I'm looking to start blogging again.
