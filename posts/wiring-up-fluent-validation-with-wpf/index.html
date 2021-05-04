@@ -1,0 +1,194 @@
+<!doctype html><html lang=en><head><title>Wiring Up Fluent Validation With WPF ::
+Grant's Blog — Hi, my name is Grant. I like to write software and do other things too</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Update
+I originally wrote this proof of concept about 7 years ago early in my time with WPF. I published it on an earlier iteration of my blog via Github Gist and Wordpress (You can find the gist here). After which point I pretty much forgot out it.
+I recently came across the Gist and found that it has helped out a surprising number of people. So, it makes sense to me to pull this in to a blog and annotate it a bit better."><meta name=keywords content="csharp,.net,programming"><meta name=robots content="noodp"><link rel=canonical href=/posts/wiring-up-fluent-validation-with-wpf/><link rel=stylesheet href=/assets/style.css><link rel=stylesheet href=/style.css><link rel=apple-touch-icon-precomposed sizes=144x144 href=/img/apple-touch-icon-144-precomposed.png><link rel="shortcut icon" href=/img/favicon.png><link href=/assets/fonts/Inter-Italic.woff2 rel=preload type=font/woff2 as=font crossorigin><link href=/assets/fonts/Inter-Regular.woff2 rel=preload type=font/woff2 as=font crossorigin><link href=/assets/fonts/Inter-Medium.woff2 rel=preload type=font/woff2 as=font crossorigin><link href=/assets/fonts/Inter-MediumItalic.woff2 rel=preload type=font/woff2 as=font crossorigin><link href=/assets/fonts/Inter-Bold.woff2 rel=preload type=font/woff2 as=font crossorigin><link href=/assets/fonts/Inter-BoldItalic.woff2 rel=preload type=font/woff2 as=font crossorigin><meta name=twitter:card content="summary"><meta name=twitter:title content="Wiring Up Fluent Validation With WPF"><meta name=twitter:description content="Update
+I originally wrote this proof of concept about 7 years ago early in my time with WPF. I published it on an earlier iteration of my blog via Github Gist and Wordpress (You can find the gist here). After which point I pretty much forgot out it.
+I recently came across the Gist and found that it has helped out a surprising number of people. So, it makes sense to me to pull this in to a blog and annotate it a bit better."><meta property="og:title" content="Wiring Up Fluent Validation With WPF"><meta property="og:description" content="Update
+I originally wrote this proof of concept about 7 years ago early in my time with WPF. I published it on an earlier iteration of my blog via Github Gist and Wordpress (You can find the gist here). After which point I pretty much forgot out it.
+I recently came across the Gist and found that it has helped out a surprising number of people. So, it makes sense to me to pull this in to a blog and annotate it a bit better."><meta property="og:type" content="article"><meta property="og:url" content="/posts/wiring-up-fluent-validation-with-wpf/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2021-05-03T22:30:07-04:00"><meta property="article:modified_time" content="2021-05-03T22:30:07-04:00"><meta property="og:site_name" content="Grant's Blog"></head><body class=dark-theme><div class=container><header class=header><span class=header__inner><a href=/ class=logo style=text-decoration:none><span class=logo__mark><svg xmlns="http://www.w3.org/2000/svg" class="greater-icon" viewBox="0 0 44 44"><path fill="none" d="M15 8l14.729 14.382L15 35.367"/></svg></span><span class=logo__text>Grant's Blog</span>
+<span class=logo__cursor></span></a><span class=header__right><nav class=menu><ul class="menu__inner menu__inner--desktop"><li><a href=/posts>Posts</a></li></ul><ul class="menu__inner menu__inner--mobile"><li><a href=/posts>Posts</a></li></ul></nav><span class=menu-trigger><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></span><span class=theme-toggle><svg class="theme-toggler" width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 41c10.4934.0 19-8.5066 19-19C41 11.5066 32.4934 3 22 3 11.5066 3 3 11.5066 3 22s8.5066 19 19 19zM7 22C7 13.7157 13.7157 7 22 7V37C13.7157 37 7 30.2843 7 22z"/></svg></span></span></span></header><div class=content><div class=post><h1 class=post-title>Wiring Up Fluent Validation With WPF</h1><div class=post-meta><span class=post-date>2021-05-03</span></div><div class=post-content><p><strong>Update</strong></p><p>I originally wrote this proof of concept about 7 years ago early in my time with WPF. I published it on an earlier iteration of my blog via Github Gist and Wordpress (<a href=https://gist.github.com/GrantByrne/11243164>You can find the gist here</a>). After which point I pretty much forgot out it.</p><p>I recently came across the Gist and found that it has helped out a surprising number of people. So, it makes sense to me to pull this in to a blog and annotate it a bit better. If there is interest, I may make some more changes to streamline to examples and take advantage of newer C# features.</p><h2 id=overview>Overview</h2><p><a href=https://fluentvalidation.net/>Fluent Validation</a> is my favorite validation library for C#. It is pretty straightforward to use and it forces you to separate out the validation code into a separate class which IMHO generally makes the code cleaner.</p><p>The library includes some pretty standard integrations with ASP.NET, but there never was a first class implementation that integrates a validator with a WPF view model. This post is a proof of concept that I put together to bridge that gap.</p><h2 id=building-the-validator>Building the Validator</h2><p>For the purposes of demonstration. We&rsquo;ll have a UserViewModel which has a property for Name, E-Mail, and Zip Code. So we&rsquo;ll write a quick validator for the usual aspects of that data.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-csharp data-lang=csharp><span style=color:#66d9ef>using</span> System.Text.RegularExpressions;
+<span style=color:#66d9ef>using</span> FluentValidation;
+<span style=color:#66d9ef>using</span> WpfFluentValidationExample.ViewModels;
+
+<span style=color:#66d9ef>namespace</span> WpfFluentValidationExample.Lib
+{
+    <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>UserValidator</span> : AbstractValidator&lt;UserViewModel&gt;
+    {
+        <span style=color:#66d9ef>public</span> UserValidator()
+        {
+            RuleFor(user =&gt; user.Name)
+                .NotEmpty()
+                .WithMessage(<span style=color:#e6db74>&#34;Please Specify a Name.&#34;</span>);
+
+            RuleFor(user =&gt; user.Email)
+                .EmailAddress()
+                .WithMessage(<span style=color:#e6db74>&#34;Please Specify a Valid E-Mail Address&#34;</span>);
+
+            RuleFor(user =&gt; user.Zip)
+                .Must(BeAValidZip)
+                .WithMessage(<span style=color:#e6db74>&#34;Please Enter a Valid Zip Code&#34;</span>);
+        }
+
+        <span style=color:#66d9ef>private</span> <span style=color:#66d9ef>static</span> <span style=color:#66d9ef>bool</span> BeAValidZip(<span style=color:#66d9ef>string</span> zip)
+        {
+            <span style=color:#66d9ef>if</span> (!<span style=color:#66d9ef>string</span>.IsNullOrEmpty(zip))
+            {
+                <span style=color:#66d9ef>var</span> regex = <span style=color:#66d9ef>new</span> Regex(<span style=color:#e6db74>@&#34;\d{5}&#34;</span>);
+                <span style=color:#66d9ef>return</span> regex.IsMatch(zip);
+            }
+            <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>false</span>;
+        }
+    }
+}
+</code></pre></div><h2 id=creating-the-view-to-present-the-validation>Creating the View to Present the Validation</h2><p>Here is the view that I created to demonstrate this implementation.</p><p>This is a standard form written in XAML with a few differences:</p><ul><li>In the property binding for the text on the textboxes we can see that I added a &ldquo;ValidatesOnDataErrors=True&rdquo; clause.</li><li>On each one of those textboxes as well, I expanded out the Validation.Error template property with a stack panel which will slot in a validation error when one occurs.</li></ul><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-xml data-lang=xml><span style=color:#f92672>&lt;Window</span>
+        <span style=color:#a6e22e>xmlns=</span><span style=color:#e6db74>&#34;http://schemas.microsoft.com/winfx/2006/xaml/presentation&#34;</span>
+        <span style=color:#a6e22e>xmlns:x=</span><span style=color:#e6db74>&#34;http://schemas.microsoft.com/winfx/2006/xaml&#34;</span>
+        <span style=color:#a6e22e>xmlns:viewModels=</span><span style=color:#e6db74>&#34;clr-namespace:WpfFluentValidationExample.ViewModels&#34;</span> <span style=color:#a6e22e>x:Class=</span><span style=color:#e6db74>&#34;WpfFluentValidationExample.Views.UserView&#34;</span>
+        <span style=color:#a6e22e>Title=</span><span style=color:#e6db74>&#34;UserView&#34;</span> <span style=color:#a6e22e>Height=</span><span style=color:#e6db74>&#34;300&#34;</span> <span style=color:#a6e22e>MinWidth=</span><span style=color:#e6db74>&#34;500&#34;</span><span style=color:#f92672>&gt;</span>
+    <span style=color:#f92672>&lt;Window.DataContext&gt;</span>
+        <span style=color:#f92672>&lt;viewModels:UserViewModel/&gt;</span>
+    <span style=color:#f92672>&lt;/Window.DataContext&gt;</span>
+    <span style=color:#f92672>&lt;StackPanel&gt;</span>
+        <span style=color:#f92672>&lt;StackPanel</span> <span style=color:#a6e22e>Orientation=</span><span style=color:#e6db74>&#34;Horizontal&#34;</span><span style=color:#f92672>&gt;</span>
+            <span style=color:#f92672>&lt;Label</span> <span style=color:#a6e22e>Content=</span><span style=color:#e6db74>&#34;Name&#34;</span> <span style=color:#a6e22e>Margin=</span><span style=color:#e6db74>&#34;10&#34;</span><span style=color:#f92672>/&gt;</span>
+            <span style=color:#f92672>&lt;TextBox</span> <span style=color:#a6e22e>Text=</span><span style=color:#e6db74>&#34;{Binding Name, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}&#34;</span> <span style=color:#a6e22e>Width=</span><span style=color:#e6db74>&#34;200&#34;</span> <span style=color:#a6e22e>Margin=</span><span style=color:#e6db74>&#34;10&#34;</span><span style=color:#f92672>&gt;</span>
+                <span style=color:#f92672>&lt;Validation.ErrorTemplate&gt;</span>
+                    <span style=color:#f92672>&lt;ControlTemplate&gt;</span>
+                        <span style=color:#f92672>&lt;StackPanel</span> <span style=color:#a6e22e>Orientation=</span><span style=color:#e6db74>&#34;Horizontal&#34;</span><span style=color:#f92672>&gt;</span>
+                            <span style=color:#f92672>&lt;AdornedElementPlaceholder</span> <span style=color:#a6e22e>x:Name=</span><span style=color:#e6db74>&#34;textBox&#34;</span><span style=color:#f92672>/&gt;</span>
+                            <span style=color:#f92672>&lt;TextBlock</span> <span style=color:#a6e22e>Margin=</span><span style=color:#e6db74>&#34;10&#34;</span> <span style=color:#a6e22e>Text=</span><span style=color:#e6db74>&#34;{Binding [0].ErrorContent}&#34;</span> <span style=color:#a6e22e>Foreground=</span><span style=color:#e6db74>&#34;Red&#34;</span><span style=color:#f92672>/&gt;</span>
+                        <span style=color:#f92672>&lt;/StackPanel&gt;</span>
+                    <span style=color:#f92672>&lt;/ControlTemplate&gt;</span>
+                <span style=color:#f92672>&lt;/Validation.ErrorTemplate&gt;</span>
+            <span style=color:#f92672>&lt;/TextBox&gt;</span>
+        <span style=color:#f92672>&lt;/StackPanel&gt;</span>
+        <span style=color:#f92672>&lt;StackPanel</span> <span style=color:#a6e22e>Orientation=</span><span style=color:#e6db74>&#34;Horizontal&#34;</span><span style=color:#f92672>&gt;</span>
+            <span style=color:#f92672>&lt;Label</span> <span style=color:#a6e22e>Content=</span><span style=color:#e6db74>&#34;E-Mail&#34;</span> <span style=color:#a6e22e>Margin=</span><span style=color:#e6db74>&#34;10&#34;</span><span style=color:#f92672>/&gt;</span>
+            <span style=color:#f92672>&lt;TextBox</span> <span style=color:#a6e22e>Text=</span><span style=color:#e6db74>&#34;{Binding Email, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}&#34;</span> <span style=color:#a6e22e>Width=</span><span style=color:#e6db74>&#34;200&#34;</span> <span style=color:#a6e22e>Margin=</span><span style=color:#e6db74>&#34;10&#34;</span><span style=color:#f92672>&gt;</span>
+                <span style=color:#f92672>&lt;Validation.ErrorTemplate&gt;</span>
+                    <span style=color:#f92672>&lt;ControlTemplate&gt;</span>
+                        <span style=color:#f92672>&lt;StackPanel</span> <span style=color:#a6e22e>Orientation=</span><span style=color:#e6db74>&#34;Horizontal&#34;</span><span style=color:#f92672>&gt;</span>
+                            <span style=color:#f92672>&lt;AdornedElementPlaceholder</span> <span style=color:#a6e22e>x:Name=</span><span style=color:#e6db74>&#34;textBox&#34;</span><span style=color:#f92672>/&gt;</span>
+                            <span style=color:#f92672>&lt;TextBlock</span> <span style=color:#a6e22e>Margin=</span><span style=color:#e6db74>&#34;10&#34;</span> <span style=color:#a6e22e>Text=</span><span style=color:#e6db74>&#34;{Binding [0].ErrorContent}&#34;</span> <span style=color:#a6e22e>Foreground=</span><span style=color:#e6db74>&#34;Red&#34;</span><span style=color:#f92672>/&gt;</span>
+                        <span style=color:#f92672>&lt;/StackPanel&gt;</span>
+                    <span style=color:#f92672>&lt;/ControlTemplate&gt;</span>
+                <span style=color:#f92672>&lt;/Validation.ErrorTemplate&gt;</span>
+            <span style=color:#f92672>&lt;/TextBox&gt;</span>
+        <span style=color:#f92672>&lt;/StackPanel&gt;</span>
+        <span style=color:#f92672>&lt;StackPanel</span> <span style=color:#a6e22e>Orientation=</span><span style=color:#e6db74>&#34;Horizontal&#34;</span><span style=color:#f92672>&gt;</span>
+            <span style=color:#f92672>&lt;Label</span> <span style=color:#a6e22e>Content=</span><span style=color:#e6db74>&#34;Zip&#34;</span> <span style=color:#a6e22e>Margin=</span><span style=color:#e6db74>&#34;10&#34;</span><span style=color:#f92672>/&gt;</span>
+            <span style=color:#f92672>&lt;TextBox</span> <span style=color:#a6e22e>Text=</span><span style=color:#e6db74>&#34;{Binding Zip, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}&#34;</span> <span style=color:#a6e22e>Width=</span><span style=color:#e6db74>&#34;200&#34;</span> <span style=color:#a6e22e>Margin=</span><span style=color:#e6db74>&#34;10&#34;</span><span style=color:#f92672>&gt;</span>
+                <span style=color:#f92672>&lt;Validation.ErrorTemplate&gt;</span>
+                    <span style=color:#f92672>&lt;ControlTemplate&gt;</span>
+                        <span style=color:#f92672>&lt;StackPanel</span> <span style=color:#a6e22e>Orientation=</span><span style=color:#e6db74>&#34;Horizontal&#34;</span><span style=color:#f92672>&gt;</span>
+                            <span style=color:#75715e>&lt;!-- Placeholder for the TextBox itself --&gt;</span>
+                            <span style=color:#f92672>&lt;AdornedElementPlaceholder</span> <span style=color:#a6e22e>x:Name=</span><span style=color:#e6db74>&#34;textBox&#34;</span><span style=color:#f92672>/&gt;</span>
+                            <span style=color:#f92672>&lt;TextBlock</span> <span style=color:#a6e22e>Margin=</span><span style=color:#e6db74>&#34;10&#34;</span> <span style=color:#a6e22e>Text=</span><span style=color:#e6db74>&#34;{Binding [0].ErrorContent}&#34;</span> <span style=color:#a6e22e>Foreground=</span><span style=color:#e6db74>&#34;Red&#34;</span><span style=color:#f92672>/&gt;</span>
+                        <span style=color:#f92672>&lt;/StackPanel&gt;</span>
+                    <span style=color:#f92672>&lt;/ControlTemplate&gt;</span>
+                <span style=color:#f92672>&lt;/Validation.ErrorTemplate&gt;</span>
+            <span style=color:#f92672>&lt;/TextBox&gt;</span>
+        <span style=color:#f92672>&lt;/StackPanel&gt;</span>
+        <span style=color:#f92672>&lt;Button</span> <span style=color:#a6e22e>Margin=</span><span style=color:#e6db74>&#34;10&#34;</span><span style=color:#f92672>&gt;</span>Submit<span style=color:#f92672>&lt;/Button&gt;</span>
+    <span style=color:#f92672>&lt;/StackPanel&gt;</span>
+<span style=color:#f92672>&lt;/Window&gt;</span></code></pre></div><h2 id=the-code-behind-on-the-view>The Code Behind on the View</h2><p>Including this for the sake of completeness. Please ignore.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-csharp data-lang=csharp><span style=color:#66d9ef>using</span> System.Windows;
+<span style=color:#66d9ef>using</span> WpfFluentValidationExample.ViewModels;
+
+<span style=color:#66d9ef>namespace</span> WpfFluentValidationExample.Views
+{
+    <span style=color:#75715e>/// &lt;summary&gt;
+</span><span style=color:#75715e></span>    <span style=color:#75715e>/// Interaction logic for UserView.xaml
+</span><span style=color:#75715e></span>    <span style=color:#75715e>/// &lt;/summary&gt;
+</span><span style=color:#75715e></span>    <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>partial</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>UserView</span> : Window
+    {
+        <span style=color:#66d9ef>public</span> UserView()
+        {
+            InitializeComponent();
+            DataContext = <span style=color:#66d9ef>new</span> UserViewModel();
+        }
+    }
+}
+</code></pre></div><h2 id=the-viewmodel>The Viewmodel</h2><p>The viewmodel is the integration point between the fluent validator, the data, and the view. Initially this looks like a standard viewmodel. We have a property for the name, email, and zip code.</p><p>Closer to the bottom, you&rsquo;ll find the integration for the validation:</p><ul><li>There is the integration of the overloaded [] operator which matches up the property name with the validation.</li><li>There is also the addition of an Error string which combines together all the errors into a single string</li></ul><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-csharp data-lang=csharp><span style=color:#66d9ef>using</span> System;
+<span style=color:#66d9ef>using</span> System.ComponentModel;
+<span style=color:#66d9ef>using</span> System.Linq;
+<span style=color:#66d9ef>using</span> WpfFluentValidationExample.Lib;
+
+<span style=color:#66d9ef>namespace</span> WpfFluentValidationExample.ViewModels
+{
+    <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>class</span> <span style=color:#a6e22e>UserViewModel</span> : INotifyPropertyChanged, IDataErrorInfo
+    {
+        <span style=color:#66d9ef>private</span> <span style=color:#66d9ef>readonly</span> UserValidator _userValidator = <span style=color:#66d9ef>new</span> UserValidator();
+
+        <span style=color:#66d9ef>private</span> <span style=color:#66d9ef>string</span> _zip;
+        <span style=color:#66d9ef>private</span> <span style=color:#66d9ef>string</span> _email;
+        <span style=color:#66d9ef>private</span> <span style=color:#66d9ef>string</span> _name;
+
+        <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>string</span> Name
+        {
+            <span style=color:#66d9ef>get</span> { <span style=color:#66d9ef>return</span> _name; }
+            <span style=color:#66d9ef>set</span>
+            {
+                _name = <span style=color:#66d9ef>value</span>;
+                OnPropertyChanged(<span style=color:#e6db74>&#34;Name&#34;</span>);
+            }
+        }
+
+        <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>string</span> Email
+        {
+            <span style=color:#66d9ef>get</span> { <span style=color:#66d9ef>return</span> _email; }
+            <span style=color:#66d9ef>set</span>
+            {
+                _email = <span style=color:#66d9ef>value</span>;
+                OnPropertyChanged(<span style=color:#e6db74>&#34;Email&#34;</span>);
+            }
+        }
+
+        <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>string</span> Zip
+        {
+            <span style=color:#66d9ef>get</span> { <span style=color:#66d9ef>return</span> _zip; }
+            <span style=color:#66d9ef>set</span>
+            {
+                _zip = <span style=color:#66d9ef>value</span>;
+                OnPropertyChanged(<span style=color:#e6db74>&#34;Zip&#34;</span>);
+            }
+        }
+
+        <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>string</span> <span style=color:#66d9ef>this</span>[<span style=color:#66d9ef>string</span> columnName]
+        {
+            <span style=color:#66d9ef>get</span>
+            {
+                <span style=color:#66d9ef>var</span> firstOrDefault = _userValidator.Validate(<span style=color:#66d9ef>this</span>).Errors.FirstOrDefault(p =&gt; p.PropertyName == columnName);
+                <span style=color:#66d9ef>if</span> (firstOrDefault != <span style=color:#66d9ef>null</span>)
+                    <span style=color:#66d9ef>return</span> _userValidator != <span style=color:#66d9ef>null</span> ? firstOrDefault.ErrorMessage : <span style=color:#e6db74>&#34;&#34;</span>;
+                <span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#34;&#34;</span>;
+            }
+        }
+
+        <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>string</span> Error
+        {
+            <span style=color:#66d9ef>get</span>
+            {
+                <span style=color:#66d9ef>if</span> (_userValidator != <span style=color:#66d9ef>null</span>)
+                {
+                    <span style=color:#66d9ef>var</span> results = _userValidator.Validate(<span style=color:#66d9ef>this</span>);
+                    <span style=color:#66d9ef>if</span> (results != <span style=color:#66d9ef>null</span> &amp;&amp; results.Errors.Any())
+                    {
+                        <span style=color:#66d9ef>var</span> errors = <span style=color:#66d9ef>string</span>.Join(Environment.NewLine, results.Errors.Select(x =&gt; x.ErrorMessage).ToArray());
+                        <span style=color:#66d9ef>return</span> errors;
+                    }
+                }
+                <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>string</span>.Empty;
+            }
+        }
+
+        <span style=color:#66d9ef>public</span> <span style=color:#66d9ef>event</span> PropertyChangedEventHandler PropertyChanged;
+
+        <span style=color:#66d9ef>protected</span> <span style=color:#66d9ef>virtual</span> <span style=color:#66d9ef>void</span> OnPropertyChanged(<span style=color:#66d9ef>string</span> propertyName)
+        {
+            PropertyChangedEventHandler handler = PropertyChanged;
+            <span style=color:#66d9ef>if</span> (handler != <span style=color:#66d9ef>null</span>) handler(<span style=color:#66d9ef>this</span>, <span style=color:#66d9ef>new</span> PropertyChangedEventArgs(propertyName));
+        }
+    }
+}
+</code></pre></div><h2 id=conclusion>Conclusion</h2><p>Thanks for sticking around to the end. I hope this helped you out improving the validation on your WPF application.</p><p>If this helped you out, it would be helpful to star the Github Gist that is linked at the top of the post so that I know that I&rsquo;m helping people out.</p></div><div class=pagination><div class=pagination__title><span class=pagination__title-h>Read other posts</span><hr></div><div class=pagination__buttons><span class="button next"><a href=/posts/getting-started-with-hangfire/><span class=button__text>Getting Started With Hangfire</span>
+<span class=button__icon>→</span></a></span></div></div></div></div><footer class=footer><div class=footer__inner><div class="copyright copyright--user">Grant Byrne 2021</div></div></footer><script src=/assets/main.js></script><script src=/assets/prism.js></script></div></body></html>
