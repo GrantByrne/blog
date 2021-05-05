@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>blog on Grant's Blog</title><link>/tags/blog/</link><description>Recent content in blog on Grant's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Grant Byrne 2021</copyright><lastBuildDate>Wed, 15 Aug 2018 22:16:38 -0400</lastBuildDate><atom:link href="/tags/blog/index.xml" rel="self" type="application/rss+xml"/><item><title>First Post</title><link>/posts/first/</link><pubDate>Wed, 15 Aug 2018 22:16:38 -0400</pubDate><guid>/posts/first/</guid><description>
+Hello World!
+After multiple attempts in the past I&amp;rsquo;m looking to start blogging again.
+In this iteration, I&amp;rsquo;m using an Amazon S3 bucket serving up a static site that is generated with Hugo. So far I&amp;rsquo;m pretty happy with the results.
+In future iterations of the site, I&amp;rsquo;m planning to:
+Add tagging support to the posts Add the google analytics tag Make some adjustments to the theme to make it even more lightweight Add a landing page so this website is more than just a blog Add references to the other sites where I spend my time: Github and Instagram.</description></item></channel></rss>
