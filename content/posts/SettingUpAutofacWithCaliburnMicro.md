@@ -2,6 +2,7 @@
 title: "Setting up Autofac with Caliburn Micro v3.2.0 and Autofac v4.8.1"
 date: 2018-08-15T22:40:27-04:00
 draft: false
+tags: [csharp, wpf, autofac, caliburn-micro, ioc]
 ---
 
 I find myself frequently setting up new projects with Caliburn Micro; however, It isn’t always easy to remember the code to integrate Autofac with the bootstrapper. So, here is the template that I use when creating a new application.

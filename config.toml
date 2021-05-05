@@ -56,3 +56,6 @@ paginate = 5
         identifier = "posts"
         name = "Posts"
         url = "/posts"
+
+[taxonomies]
+   tag = "tags"

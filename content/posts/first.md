@@ -2,6 +2,7 @@
 title: "First Post"
 date: 2018-08-15T22:16:38-04:00
 draft: false
+tags: [blog]
 ---
 
 Hello World!

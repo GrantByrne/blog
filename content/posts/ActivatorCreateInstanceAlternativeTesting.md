@@ -1,6 +1,7 @@
 ---
 title: "Activator.CreateInstance Alternatives with Benchmarks"
 date: 2018-08-24T15:52:48-04:00
+tags: [csharp, optimization]
 ---
 
 .NET provides multiple ways of generating objects at runtime. Each of these options offer their own trades offs in terms of performance. I will demonstrate that not only are there great performance gains to be had over Activator.CreateInstance(...), but I will also show that there are nuances to how you set up these classes that can dramatically effect performance.

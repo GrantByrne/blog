@@ -1,6 +1,7 @@
 ---
 title: "Wiring Up Fluent Validation With WPF"
 date: 2021-05-03T22:30:07-04:00
+tags: [csharp, wpf, fluent-validation]
 ---
 
 **Update**
